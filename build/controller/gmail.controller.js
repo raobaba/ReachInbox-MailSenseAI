@@ -3,10 +3,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.sendMail = void 0;
+exports.getDrafts = exports.getMails = exports.readMail = exports.getUser = exports.sendMail = void 0;
+const axios_1 = __importDefault(require("axios"));
 const nodemailer_1 = __importDefault(require("nodemailer"));
 const googleapis_1 = require("googleapis");
 const gmail_constant_1 = __importDefault(require("../constant/gmail.constant"));
+const gmail_utils_1 = require("../utils/gmail.utils");
 const oAuth2Client = new googleapis_1.google.auth.OAuth2(process.env.CLIENT_ID, process.env.CLIENT_SECRET, process.env.REDIRECT_URI);
 oAuth2Client.setCredentials({ refresh_token: process.env.REFRESH_TOKEN });
 async function sendMail(req, res) {
@@ -42,3 +44,60 @@ async function sendMail(req, res) {
     }
 }
 exports.sendMail = sendMail;
+async function getUser(req, res) {
+    try {
+        const url = `https://gmail.googleapis.com/gmail/v1/users/${req.params.email}/profile`;
+        const { token } = await oAuth2Client.getAccessToken();
+        const config = (0, gmail_utils_1.createConfig)(url, token);
+        const response = await (0, axios_1.default)(config);
+        res.json(response.data);
+    }
+    catch (error) {
+        console.log(error);
+        res.send(error);
+    }
+}
+exports.getUser = getUser;
+async function readMail(req, res) {
+    try {
+        const url = `https://gmail.googleapis.com/gmail/v1/users/${req.params.email}/messages/${req.params.messageId}`;
+        const { token } = await oAuth2Client.getAccessToken();
+        const config = (0, gmail_utils_1.createConfig)(url, token);
+        const response = await (0, axios_1.default)(config);
+        const data = response.data;
+        res.json(data);
+    }
+    catch (error) {
+        console.log(error);
+        res.send(error);
+    }
+}
+exports.readMail = readMail;
+async function getMails(req, res) {
+    try {
+        const url = `https://gmail.googleapis.com/gmail/v1/users/${req.params.email}/threads?maxResults=100`;
+        const { token } = await oAuth2Client.getAccessToken();
+        const config = (0, gmail_utils_1.createConfig)(url, token);
+        const response = await (0, axios_1.default)(config);
+        res.json(response.data);
+    }
+    catch (error) {
+        console.log(error);
+        res.send(error);
+    }
+}
+exports.getMails = getMails;
+async function getDrafts(req, res) {
+    try {
+        const url = `https://gmail.googleapis.com/gmail/v1/users/${req.params.email}/drafts`;
+        const { token } = await oAuth2Client.getAccessToken();
+        const config = (0, gmail_utils_1.createConfig)(url, token);
+        const response = await (0, axios_1.default)(config);
+        res.json(response.data);
+    }
+    catch (error) {
+        console.log(error);
+        res.send(error);
+    }
+}
+exports.getDrafts = getDrafts;

@@ -1,5 +1,5 @@
 import express from 'express';
-import gmailRouter from '../route/gmail.route';
+import gmailRouter from './route/gmail.route';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
