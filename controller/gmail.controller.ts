@@ -62,9 +62,26 @@ async function getUser(req: Request, res: Response): Promise<void> {
         res.send(error);
     }
 }
+async function readMail(req: Request, res: Response): Promise<void> {
+    try {
+        const url = `https://gmail.googleapis.com/gmail/v1/users/${req.params.email}/messages/${req.params.messageId}`;
+        const { token } = await oAuth2Client.getAccessToken();
+        const config = createConfig(url, token as string);
+        const response = await axios(config);
+
+        const data = response.data;
+        res.json(data);
+    }
+    catch (error) {
+        console.log(error);
+        res.send(error);
+    }
+}
 
 
 export {
     sendMail,
-    getUser
+    getUser,
+    readMail,
+
 };

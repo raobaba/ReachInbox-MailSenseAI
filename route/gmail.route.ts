@@ -12,4 +12,8 @@ gmailRouter.get("/mail/user/:email", (req: Request, res: Response) =>
   controllers.getUser(req, res)
 );
 
+gmailRouter.get("/mail/read/:email/:messageId", (req: Request, res: Response) =>
+  controllers.readMail(req, res)
+);
+
 export default gmailRouter;
