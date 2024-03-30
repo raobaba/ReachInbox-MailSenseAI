@@ -15,9 +15,10 @@ const openai = new OpenAI({
 })
 
 app.get("/getResponse", async (req: Request, res: Response)=>{
+    const userPrompt = req.body.userPrompt;
     const response = await openai.chat.completions.create({
        model:"gpt-3.5-turbo",
-       messages: [{"role":"user","content":"write something about India"}],
+       messages: [{"role":"user","content":userPrompt}],
        max_tokens: 100,
     });
     res.send(response.choices[0].message.content);
