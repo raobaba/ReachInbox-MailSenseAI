@@ -119,33 +119,10 @@ async function getMails(req: Request, res: Response): Promise<void> {
     }
 }
 
-async function getDrafts(req: Request, res: Response): Promise<void> {
-    try {
-        const email = req.params.email as string;
-        if (!email) {
-            throw new Error("Email address is missing");
-        }
-        
-        const url = `https://gmail.googleapis.com/gmail/v1/users/${email}/drafts`;
-        const accessToken = await oAuth2Client.getAccessToken();
-        if (!accessToken) {
-            throw new Error("Access token is null or undefined");
-        }
-        const token = accessToken.token as string;
-        const config: AxiosRequestConfig = createConfig(url, token);
-        const response: AxiosResponse = await axios(config);
-        res.json(response.data);
-    }
-    catch (error) {
-        console.log(error);
-        res.send(error);
-    }
-}
 
 export default {
     sendMail,
     getUser,
     readMail,
-    getMails,
-    getDrafts
+    getMails
 };
