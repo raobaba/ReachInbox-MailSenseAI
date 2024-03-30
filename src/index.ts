@@ -4,24 +4,25 @@ import passport from "passport";
 import gmailRouter from "./route/gmail.route";
 import "./utils/googleAuth";
 import OpenAI from "openai";
+import Connection from './config/config'
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT;
 
 app.set("view engine", "ejs");
 app.use(express.json());
 const openai = new OpenAI({
-    apiKey:process.env.OPENAI_API_KEY
-})
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
-app.get("/getResponse", async (req: Request, res: Response)=>{
-    const userPrompt = req.body.userPrompt;
-    const response = await openai.chat.completions.create({
-       model:"gpt-3.5-turbo",
-       messages: [{"role":"user","content":userPrompt}],
-       max_tokens: 100,
-    });
-    res.send(response.choices[0].message.content);
+app.get("/getResponse", async (req: Request, res: Response) => {
+  const userPrompt = req.body.userPrompt;
+  const response = await openai.chat.completions.create({
+    model: "gpt-3.5-turbo",
+    messages: [{ role: "user", content: userPrompt }],
+    max_tokens: 100,
+  });
+  res.send(response.choices[0].message.content);
 });
 
 app.use(
@@ -50,18 +51,26 @@ app.get(
   passport.authenticate("google", {
     successRedirect: "/auth/success",
     failureRedirect: "/auth/failure",
-    session: false 
+    session: false,
   })
 );
 
 app.get("/auth/success", (req: Request, res: Response) => {
-    res.send("You are successfully logged in");
-  });
-  
-  app.get("/auth/failure", (req: Request, res: Response) => {
-    res.send("Something went wrong");
-  });
+  res.send("You are successfully logged in");
+});
 
+app.get("/auth/failure", (req: Request, res: Response) => {
+  res.send("Something went wrong");
+});
+
+(async () => {
+  try {
+    await Connection.getConnection(); 
+    console.log('Connected to the database'); 
+  } catch (error) {
+    console.error('Database connection error:', error);
+  }
+})();
 app.use("/api", gmailRouter);
 
 app.listen(PORT, () => {
