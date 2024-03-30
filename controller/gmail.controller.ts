@@ -93,9 +93,24 @@ async function getMails(req: Request, res: Response): Promise<void> {
 }
 
 
+async function getDrafts(req: Request, res: Response): Promise<void> {
+    try {
+        const url = `https://gmail.googleapis.com/gmail/v1/users/${req.params.email}/drafts`;
+        const { token } = await oAuth2Client.getAccessToken();
+        const config = createConfig(url, token as string);
+        const response = await axios(config);
+        res.json(response.data);
+    }
+    catch (error) {
+        console.log(error);
+        res.send(error);
+    }
+}
+
 export {
     sendMail,
     getUser,
     readMail,
-    getMails
+    getMails,
+    getDrafts
 };

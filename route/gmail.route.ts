@@ -20,4 +20,8 @@ gmailRouter.get("/mail/list/:email", (req: Request, res: Response) =>
   controllers.getMails(req, res)
 );
 
+gmailRouter.get("/mail/drafts/:email", (req: Request, res: Response) =>
+  controllers.getDrafts(req, res)
+);
+
 export default gmailRouter;
