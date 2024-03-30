@@ -1,7 +1,9 @@
+import axios from 'axios'
 import nodemailer from 'nodemailer';
 import { google } from 'googleapis';
 import CONSTANTS from '../constant/gmail.constant';
 import { Request, Response } from 'express';
+import { createConfig } from '../utils/gmail.utils';
 
 const oAuth2Client = new google.auth.OAuth2(
     process.env.CLIENT_ID as string,
@@ -47,7 +49,22 @@ async function sendMail(req: Request, res: Response): Promise<void> {
     }
 }
 
+async function getUser(req: Request, res: Response): Promise<void> {
+    try {
+        const url = `https://gmail.googleapis.com/gmail/v1/users/${req.params.email}/profile`;
+        const { token } = await oAuth2Client.getAccessToken();
+        const config = createConfig(url, token as string);
+        const response = await axios(config);
+        res.json(response.data);
+    }
+    catch (error) {
+        console.log(error);
+        res.send(error);
+    }
+}
+
 
 export {
-    sendMail
+    sendMail,
+    getUser
 };

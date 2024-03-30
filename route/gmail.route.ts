@@ -8,4 +8,8 @@ gmailRouter.get("/mail/send", (req: Request, res: Response) =>
   controllers.sendMail(req, res)
 );
 
+gmailRouter.get("/mail/user/:email", (req: Request, res: Response) =>
+  controllers.getUser(req, res)
+);
+
 export default gmailRouter;
