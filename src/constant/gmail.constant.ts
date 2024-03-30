@@ -1,5 +1,4 @@
 import dotenv from 'dotenv';
-
 dotenv.config();
 
 const auth = {
@@ -16,8 +15,4 @@ const mailOptions = {
     subject: 'Gmail API using Node JS',
 };
 
-export default {
-    auth,
-    mailOptions
-};
-
+export { auth, mailOptions };

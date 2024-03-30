@@ -1,6 +1,5 @@
-import express from "express";
-import { Request, Response } from "express";
-import * as controllers from "../controller/gmail.controller";
+import express, { Request, Response } from "express";
+import controllers from "../controller/gmail.controller";
 
 const gmailRouter = express.Router();
 
@@ -20,8 +19,5 @@ gmailRouter.get("/mail/list/:email", (req: Request, res: Response) =>
   controllers.getMails(req, res)
 );
 
-gmailRouter.get("/mail/drafts/:email", (req: Request, res: Response) =>
-  controllers.getDrafts(req, res)
-);
 
 export default gmailRouter;
