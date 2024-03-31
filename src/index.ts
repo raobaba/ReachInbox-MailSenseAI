@@ -44,6 +44,7 @@ app.get("/auth/failure", (req: Request, res: Response) => {
     console.error("Database connection error:", error);
   }
 })();
+
 app.use("/", gmailRouter);
 app.use("/api", openaiRouter);
 

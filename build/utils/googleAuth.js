@@ -8,9 +8,11 @@ const passport_google_oauth20_1 = require("passport-google-oauth20");
 passport_1.default.use(new passport_google_oauth20_1.Strategy({
     clientID: process.env.CLIENT_ID,
     clientSecret: process.env.CLIENT_SECRET,
-    callbackURL: "https://developers.google.com/oauthplayground",
+    callbackURL: "http://localhost:4000/auth/google/callback",
 }, (accessToken, refreshToken, profile, done) => {
     console.log(profile);
+    console.log(accessToken);
+    console.log(refreshToken);
     return done(null, profile);
 }));
 passport_1.default.serializeUser((user, done) => {

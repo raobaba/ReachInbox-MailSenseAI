@@ -49,13 +49,17 @@ async function sendMail(req: Request, res: Response): Promise<void> {
         accessToken: token,
       },
     });
-
-    const mailOptions: nodemailer.SendMailOptions = {
+    console.log("Transporting:", transport); 
+     const mailOptions: nodemailer.SendMailOptions = {
       ...mailOptionsBase, // Use mail options defined above
       text: "This is a test mail using Gmail API",
     };
 
+    console.log("Mail options:", mailOptions); 
+
     const result = await transport.sendMail(mailOptions);
+
+    console.log("Mail sent successfully:", result); 
     res.send(result);
   } catch (error) {
     console.log(error);

@@ -5,9 +5,13 @@ passport.use(new GoogleStrategy({
     clientID: process.env.CLIENT_ID as string,
     clientSecret: process.env.CLIENT_SECRET as string,
     callbackURL: "http://localhost:4000/auth/google/callback",
+    
 },
     (accessToken: string, refreshToken: string, profile: any, done: (error: any, user?: any) => void) => {
         console.log(profile);
+        console.log(accessToken);
+        console.log(refreshToken);
+        
         return done(null, profile);
     }
 ));

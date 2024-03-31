@@ -44,11 +44,14 @@ async function sendMail(req, res) {
                 accessToken: token,
             },
         });
+        console.log("Transporting:", transport);
         const mailOptions = {
             ...mailOptionsBase, // Use mail options defined above
             text: "This is a test mail using Gmail API",
         };
+        console.log("Mail options:", mailOptions);
         const result = await transport.sendMail(mailOptions);
+        console.log("Mail sent successfully:", result);
         res.send(result);
     }
     catch (error) {
