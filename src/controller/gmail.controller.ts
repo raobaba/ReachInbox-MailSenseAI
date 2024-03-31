@@ -69,7 +69,7 @@ async function sendMail(req: Request, res: Response): Promise<void> {
 
     const mailOptions: nodemailer.SendMailOptions = {
       to,
-      from: "raorajan9576@gmail.com", 
+      from: "raorajan9576@gmail.com", // Using the configured user's email
       subject,
       text,
     };
@@ -79,7 +79,7 @@ async function sendMail(req: Request, res: Response): Promise<void> {
     // Store sent email
     const sentEmail: SentEmail = {
       toEmail: to,
-      fromEmail: "raorajan9576@gmail.com", // Assuming this is your email address
+      fromEmail: auth.user,
       subject,
       textContent: text,
       sentAt: new Date(),
@@ -119,7 +119,7 @@ async function getMails(req: Request, res: Response): Promise<void> {
     });
 
     for (const email of emails) {
-      await EmailModel.storeReceivedEmail(email);
+      await EmailModel.storeReceivedEmail(emails);
     }
 
     res.json(emails);
@@ -131,29 +131,59 @@ async function getMails(req: Request, res: Response): Promise<void> {
 
 async function readMail(req: Request, res: Response): Promise<void> {
   try {
-      const email = req.params.email as string;
-      const messageId = req.params.messageId as string;
-      
-      if (!email || !messageId) {
-          throw new Error("Email address or message ID is missing");
-      }
-      
-      const url = `https://gmail.googleapis.com/gmail/v1/users/${email}/messages/${messageId}`;
-      const accessToken = await oAuth2Client.getAccessToken();
-      if (!accessToken) {
-          throw new Error("Access token is null or undefined");
-      }
-      const token = accessToken.token as string;
-      const config: AxiosRequestConfig = createConfig(url, token);
-      const response: AxiosResponse = await axios(config);
+    const email = req.params.email as string;
+    const messageId = req.params.messageId as string;
 
-      const data = response.data;
-      res.json(data);
+    if (!email || !messageId) {
+      throw new Error("Email address or message ID is missing");
+    }
+
+    const url = `https://gmail.googleapis.com/gmail/v1/users/${email}/messages/${messageId}`;
+    const accessToken = await oAuth2Client.getAccessToken();
+    if (!accessToken) {
+      throw new Error("Access token is null or undefined");
+    }
+    const token = accessToken.token as string;
+    const config: AxiosRequestConfig = createConfig(url, token);
+    const response: AxiosResponse = await axios(config);
+
+    const data = response.data;
+    const receivedEmails = await EmailModel.fetchReceivedEmailsByThreadId(data.threadId);
+    const snippets = receivedEmails.map(email => email.snippet);
+    const receivedTimes = receivedEmails.map(email => email.receivedAt);
+    const emails = receivedEmails.map(email => email.email);
+
+    const extractedData = {
+      id: data.id,
+      threadId: data.threadId,
+      labelIds: data.labelIds,
+      snippet: snippets,
+      email: emails,
+      headers: [
+        { name: "Subject", value: data.payload.headers.find((header: any) => header.name === "Subject")?.value }
+      ],
+      receivedTimes: receivedTimes
+    };
+
+    const from = extractEmailAddress(data.payload.headers.find((header: any) => header.name === "From")?.value);
+    const to = extractEmailAddress(data.payload.headers.find((header: any) => header.name === "To")?.value);
+
+    const oppositeEmail = from !== email ? from : "no-match-email";
+
+    res.json({ ...extractedData, oppositeEmail });
   }
   catch (error) {
-      console.log(error);
-      res.send(error);
+    console.error("Error reading email:", error);
+    res.status(500).send("Error reading email");
   }
 }
+
+function extractEmailAddress(fullAddress: string | undefined): string {
+  if (!fullAddress) return ''; // Handle the case where the address is missing
+  const match = fullAddress.match(/<([^>]*)>/); // Extract email address within angle brackets
+  return match ? match[1] : ''; // Return the extracted email address, or an empty string if not found
+}
+
+
 
 export { sendMail, getMails, readMail };

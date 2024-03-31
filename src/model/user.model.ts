@@ -29,15 +29,25 @@ const EmailModel = {
     }
   },
 
-  storeReceivedEmail: async (receivedEmail: ReceivedEmail): Promise<void> => {
+  storeReceivedEmail: async (receivedEmails: ReceivedEmail[]): Promise<void> => {
     try {
+      await Connection.query('TRUNCATE TABLE received_emails');
+      const values = receivedEmails.map(receivedEmail => [
+        receivedEmail.email,
+        receivedEmail.threadId,
+        receivedEmail.snippet,
+        receivedEmail.receivedAt
+      ]);
+
+      // Insert all received emails in one query
       const result = await Connection.query(
-        'INSERT INTO received_emails (email, thread_id, snippet, received_at) VALUES (?, ?, ?, ?)',
-        [receivedEmail.email, receivedEmail.threadId, receivedEmail.snippet, receivedEmail.receivedAt]
+        'INSERT INTO received_emails (email, thread_id, snippet, received_at) VALUES ?',
+        [values]
       );
-      console.log('Received email stored successfully:', result);
+
+      console.log('Received emails stored successfully:', result);
     } catch (error) {
-      console.error('Error storing received email:', error);
+      console.error('Error storing received emails:', error);
     }
   },
 
@@ -59,10 +69,11 @@ const EmailModel = {
     }
   },
 
-  fetchReceivedEmails: async (): Promise<ReceivedEmail[]> => {
+  fetchReceivedEmailsByThreadId: async (threadId: string): Promise<ReceivedEmail[]> => {
     try {
       const [results] = await Connection.query<RowDataPacket[]>(
-        'SELECT * FROM received_emails'
+        'SELECT * FROM received_emails WHERE thread_id = ?',
+        [threadId]
       );
       return results.map(row => ({
         email: row.email,
@@ -71,10 +82,11 @@ const EmailModel = {
         receivedAt: row.received_at
       }));
     } catch (error) {
-      console.error('Error fetching received emails:', error);
+      console.error('Error fetching received emails by threadId:', error);
       return [];
     }
-  }
+  },
+
 };
 
 export default EmailModel;

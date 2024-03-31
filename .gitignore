@@ -93,3 +93,24 @@ gmailRouter.get("/mail/read/:email/:messageId", (req: Request, res: Response) =>
 gmailRouter.get("/mail/list/:email", (req: Request, res: Response) =>
   controllers.getMails(req, res)
 );
+
+{
+    "id": "18e89eece880d3ff",
+    "threadId": "18e89eece880d3ff",
+    "labelIds": [
+        "IMPORTANT",
+        "CATEGORY_PERSONAL",
+        "INBOX"
+    ],
+    "snippet": [
+        "Dear Nandita, Could you kindly confirm the assignment deadline: within 48 hours or by the end of the day? Clarification is appreciated. Thank you. Best regards, Rajan Kumar, On Fri, 29 Mar 2024 at 16:"
+    ],
+    "email": [
+        "raorajan9576@gmail.com"
+    ],
+    oppositeEmail:nandita@outbox.vc,
+    Subject:"Assignment | ReachInbox.ai",
+    "receivedTimes": [
+        "2024-03-31T15:54:51.000Z"
+    ]
+}
