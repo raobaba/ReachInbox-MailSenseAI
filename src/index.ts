@@ -1,13 +1,14 @@
 import express, { Request, Response } from "express";
 import session from "express-session";
 import passport from "passport";
+import { EventEmitter } from 'events';
 import gmailRouter from "./route/gmail.route";
 import "./utils/googleAuth";
 import Connection from "./config/config";
 import openaiRouter from "./route/openai.route";
 const app = express();
 const PORT = process.env.PORT ;
-
+EventEmitter.setMaxListeners(15);
 app.set("view engine", "ejs");
 
 app.use(express.json());

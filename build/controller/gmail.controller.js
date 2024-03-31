@@ -3,11 +3,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getMails = exports.sendMail = void 0;
+exports.readMail = exports.getMails = exports.sendMail = void 0;
 const axios_1 = __importDefault(require("axios"));
 const nodemailer_1 = __importDefault(require("nodemailer"));
 const googleapis_1 = require("googleapis");
 const dotenv_1 = __importDefault(require("dotenv"));
+const user_model_1 = __importDefault(require("../model/user.model"));
 const gmail_utils_1 = require("../utils/gmail.utils");
 dotenv_1.default.config();
 const auth = {
@@ -44,19 +45,23 @@ async function sendMail(req, res) {
                 accessToken: token,
             },
         });
-        console.log("Transporting:", transport);
         const mailOptions = {
-            ...mailOptionsBase, // Use mail options defined above
+            ...mailOptionsBase,
             text: "This is a test mail using Gmail API",
         };
-        console.log("Mail options:", mailOptions);
         const result = await transport.sendMail(mailOptions);
-        console.log("Mail sent successfully:", result);
+        await user_model_1.default.storeSentEmail({
+            toEmail: mailOptions.to,
+            fromEmail: mailOptions.from,
+            subject: mailOptions.subject,
+            textContent: mailOptions.text,
+            sentAt: new Date(),
+        });
         res.send(result);
     }
     catch (error) {
-        console.log(error);
-        res.send(error);
+        console.error("Error sending email:", error);
+        res.status(500).send("Error sending email");
     }
 }
 exports.sendMail = sendMail;
@@ -74,11 +79,46 @@ async function getMails(req, res) {
         const token = accessToken.token;
         const config = (0, gmail_utils_1.createConfig)(url, token);
         const response = await (0, axios_1.default)(config);
-        res.json(response.data);
+        const emails = response.data.threads.map((thread) => {
+            return {
+                email,
+                threadId: thread.id,
+                snippet: thread.snippet,
+                receivedAt: new Date(),
+            };
+        });
+        for (const email of emails) {
+            await user_model_1.default.storeReceivedEmail(email);
+        }
+        res.json(emails);
+    }
+    catch (error) {
+        console.error("Error fetching emails:", error);
+        res.status(500).send("Error fetching emails");
+    }
+}
+exports.getMails = getMails;
+async function readMail(req, res) {
+    try {
+        const email = req.params.email;
+        const messageId = req.params.messageId;
+        if (!email || !messageId) {
+            throw new Error("Email address or message ID is missing");
+        }
+        const url = `https://gmail.googleapis.com/gmail/v1/users/${email}/messages/${messageId}`;
+        const accessToken = await oAuth2Client.getAccessToken();
+        if (!accessToken) {
+            throw new Error("Access token is null or undefined");
+        }
+        const token = accessToken.token;
+        const config = (0, gmail_utils_1.createConfig)(url, token);
+        const response = await (0, axios_1.default)(config);
+        const data = response.data;
+        res.json(data);
     }
     catch (error) {
         console.log(error);
         res.send(error);
     }
 }
-exports.getMails = getMails;
+exports.readMail = readMail;

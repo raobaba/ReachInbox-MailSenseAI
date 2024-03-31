@@ -23,12 +23,6 @@ const auth = {
   refreshToken: process.env.REFRESH_TOKEN as string,
 };
 
-const mailOptionsBase = {
-  to: "shrikishunr7@gmail.com",
-  from: "raorajan9576@gmail.com",
-  subject: "Gmail API using Node JS",
-};
-
 const oAuth2Client = new google.auth.OAuth2(
   process.env.CLIENT_ID as string,
   process.env.CLIENT_SECRET as string,
@@ -41,10 +35,17 @@ oAuth2Client.setCredentials({
 
 async function sendMail(req: Request, res: Response): Promise<void> {
   try {
+    const { to, subject, text } = req.body;
+
+    if (!to || !subject || !text) {
+      throw new Error("To, subject, or text is missing in the request body");
+    }
+
     const accessToken = await oAuth2Client.getAccessToken();
     if (!accessToken) {
       throw new Error("Access token is null or undefined");
     }
+
     const token = accessToken.token as string;
     const transport = nodemailer.createTransport({
       service: "gmail",
@@ -59,19 +60,13 @@ async function sendMail(req: Request, res: Response): Promise<void> {
     });
 
     const mailOptions: nodemailer.SendMailOptions = {
-      ...mailOptionsBase,
-      text: "This is a test mail using Gmail API",
+      to,
+      from: "raorajan9576@gmail.com", 
+      subject,
+      text,
     };
 
     const result = await transport.sendMail(mailOptions);
-
-    await EmailModel.storeSentEmail({
-      toEmail: mailOptions.to as string,
-      fromEmail: mailOptions.from as string,
-      subject: mailOptions.subject as string,
-      textContent: mailOptions.text as string,
-      sentAt: new Date(),
-    });
 
     res.send(result);
   } catch (error) {
@@ -116,4 +111,31 @@ async function getMails(req: Request, res: Response): Promise<void> {
   }
 }
 
-export { sendMail, getMails };
+async function readMail(req: Request, res: Response): Promise<void> {
+  try {
+      const email = req.params.email as string;
+      const messageId = req.params.messageId as string;
+      
+      if (!email || !messageId) {
+          throw new Error("Email address or message ID is missing");
+      }
+      
+      const url = `https://gmail.googleapis.com/gmail/v1/users/${email}/messages/${messageId}`;
+      const accessToken = await oAuth2Client.getAccessToken();
+      if (!accessToken) {
+          throw new Error("Access token is null or undefined");
+      }
+      const token = accessToken.token as string;
+      const config: AxiosRequestConfig = createConfig(url, token);
+      const response: AxiosResponse = await axios(config);
+
+      const data = response.data;
+      res.json(data);
+  }
+  catch (error) {
+      console.log(error);
+      res.send(error);
+  }
+}
+
+export { sendMail, getMails, readMail };

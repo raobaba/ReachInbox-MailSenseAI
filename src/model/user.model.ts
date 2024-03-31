@@ -19,7 +19,7 @@ interface ReceivedEmail {
 const EmailModel = {
   storeSentEmail: async (sentEmail: SentEmail): Promise<void> => {
     try {
-      await Connection.query(
+        await Connection.query(
         'INSERT INTO sent_emails (to_email, from_email, subject, text_content) VALUES (?, ?, ?, ?)',
         [sentEmail.toEmail, sentEmail.fromEmail, sentEmail.subject, sentEmail.textContent]
       );
@@ -29,8 +29,9 @@ const EmailModel = {
   },
 
   storeReceivedEmail: async (receivedEmail: ReceivedEmail): Promise<void> => {
+    Connection.query('TRUNCATE TABLE received_emails');
     try {
-      await Connection.query(
+        await Connection.query(
         'INSERT INTO received_emails (email, thread_id, snippet) VALUES (?, ?, ?)',
         [receivedEmail.email, receivedEmail.threadId, receivedEmail.snippet]
       );
