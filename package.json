@@ -29,6 +29,7 @@
     "express-session": "^1.18.0",
     "googleapis": "^134.0.0",
     "mysql2": "^3.9.3",
+    "node-cron": "^3.0.3",
     "nodemailer": "^6.9.13",
     "openai": "^4.31.0",
     "passport": "^0.7.0",

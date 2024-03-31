@@ -7,19 +7,28 @@ const config_1 = __importDefault(require("../config/config"));
 const EmailModel = {
     storeSentEmail: async (sentEmail) => {
         try {
-            await config_1.default.query('INSERT INTO sent_emails (to_email, from_email, subject, text_content) VALUES (?, ?, ?, ?)', [sentEmail.toEmail, sentEmail.fromEmail, sentEmail.subject, sentEmail.textContent]);
+            await config_1.default.query('INSERT INTO sent_emails (to_email, from_email, subject, text_content, sent_at) VALUES (?, ?, ?, ?, ?)', [sentEmail.toEmail, sentEmail.fromEmail, sentEmail.subject, sentEmail.textContent, sentEmail.sentAt]);
+            console.log('Sent email stored successfully');
         }
         catch (error) {
             console.error('Error storing sent email:', error);
         }
     },
-    storeReceivedEmail: async (receivedEmail) => {
-        config_1.default.query('TRUNCATE TABLE received_emails');
+    storeReceivedEmail: async (receivedEmails) => {
         try {
-            await config_1.default.query('INSERT INTO received_emails (email, thread_id, snippet) VALUES (?, ?, ?)', [receivedEmail.email, receivedEmail.threadId, receivedEmail.snippet]);
+            await config_1.default.query('TRUNCATE TABLE received_emails');
+            const values = receivedEmails.map(receivedEmail => [
+                receivedEmail.email,
+                receivedEmail.threadId,
+                receivedEmail.snippet,
+                receivedEmail.receivedAt
+            ]);
+            // Insert all received emails in one query
+            const result = await config_1.default.query('INSERT INTO received_emails (email, thread_id, snippet, received_at) VALUES ?', [values]);
+            console.log('Received emails stored successfully:', result);
         }
         catch (error) {
-            console.error('Error storing received email:', error);
+            console.error('Error storing received emails:', error);
         }
     },
     fetchSentEmails: async () => {
@@ -38,9 +47,9 @@ const EmailModel = {
             return [];
         }
     },
-    fetchReceivedEmails: async () => {
+    fetchReceivedEmailsByThreadId: async (threadId) => {
         try {
-            const [results] = await config_1.default.query('SELECT * FROM received_emails');
+            const [results] = await config_1.default.query('SELECT * FROM received_emails WHERE thread_id = ?', [threadId]);
             return results.map(row => ({
                 email: row.email,
                 threadId: row.thread_id,
@@ -49,9 +58,9 @@ const EmailModel = {
             }));
         }
         catch (error) {
-            console.error('Error fetching received emails:', error);
+            console.error('Error fetching received emails by threadId:', error);
             return [];
         }
-    }
+    },
 };
 exports.default = EmailModel;

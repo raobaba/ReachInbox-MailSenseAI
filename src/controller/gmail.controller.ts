@@ -160,15 +160,19 @@ async function readMail(req: Request, res: Response): Promise<void> {
       snippet: snippets,
       email: emails,
       headers: [
-        { name: "Subject", value: data.payload.headers.find((header: any) => header.name === "Subject")?.value }
+        { name: "Subject", value: data.payload.headers.find((header: any) => header.name === "Subject")?.value },
+        { name: "From", value: data.payload.headers.find((header: any) => header.name === "From")?.value },
+        { name: "To", value: data.payload.headers.find((header: any) => header.name === "To")?.value }
       ],
       receivedTimes: receivedTimes
     };
+    const fromHeader = data.payload.headers.find((header: any) => header.name === "From")?.value;
+    console.log("From header:", fromHeader);
+    
+    const toHeader = data.payload.headers.find((header: any) => header.name === "To")?.value;
+    console.log("To header:", toHeader);
 
-    const from = extractEmailAddress(data.payload.headers.find((header: any) => header.name === "From")?.value);
-    const to = extractEmailAddress(data.payload.headers.find((header: any) => header.name === "To")?.value);
-
-    const oppositeEmail = from !== email ? from : "no-match-email";
+    const oppositeEmail = fromHeader !== email ? fromHeader : toHeader !== email ? toHeader : "no-match-email";
 
     res.json({ ...extractedData, oppositeEmail });
   }
@@ -179,9 +183,9 @@ async function readMail(req: Request, res: Response): Promise<void> {
 }
 
 function extractEmailAddress(fullAddress: string | undefined): string {
-  if (!fullAddress) return ''; // Handle the case where the address is missing
-  const match = fullAddress.match(/<([^>]*)>/); // Extract email address within angle brackets
-  return match ? match[1] : ''; // Return the extracted email address, or an empty string if not found
+  if (!fullAddress) return ''; 
+  const match = fullAddress.match(/<([^>]*)>/);
+  return match ? match[1] : '';
 }
 
 

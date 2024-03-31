@@ -13,7 +13,7 @@ export async function getResponse(req: Request, res: Response): Promise<void> {
     const response = await openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
       messages: [{ role: 'user', content: userPrompt }],
-      max_tokens: 100,
+      max_tokens: 50,
     });
 
     if (response.choices[0]?.message?.content) {

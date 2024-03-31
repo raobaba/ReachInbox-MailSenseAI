@@ -46,11 +46,20 @@ async function sendMail(req, res) {
         });
         const mailOptions = {
             to,
-            from: "raorajan9576@gmail.com",
+            from: "raorajan9576@gmail.com", // Using the configured user's email
             subject,
             text,
         };
         const result = await transport.sendMail(mailOptions);
+        // Store sent email
+        const sentEmail = {
+            toEmail: to,
+            fromEmail: auth.user,
+            subject,
+            textContent: text,
+            sentAt: new Date(),
+        };
+        await user_model_1.default.storeSentEmail(sentEmail);
         res.send(result);
     }
     catch (error) {
@@ -82,7 +91,7 @@ async function getMails(req, res) {
             };
         });
         for (const email of emails) {
-            await user_model_1.default.storeReceivedEmail(email);
+            await user_model_1.default.storeReceivedEmail(emails);
         }
         res.json(emails);
     }
@@ -108,11 +117,35 @@ async function readMail(req, res) {
         const config = (0, gmail_utils_1.createConfig)(url, token);
         const response = await (0, axios_1.default)(config);
         const data = response.data;
-        res.json(data);
+        const receivedEmails = await user_model_1.default.fetchReceivedEmailsByThreadId(data.threadId);
+        const snippets = receivedEmails.map(email => email.snippet);
+        const receivedTimes = receivedEmails.map(email => email.receivedAt);
+        const emails = receivedEmails.map(email => email.email);
+        const extractedData = {
+            id: data.id,
+            threadId: data.threadId,
+            labelIds: data.labelIds,
+            snippet: snippets,
+            email: emails,
+            headers: [
+                { name: "Subject", value: data.payload.headers.find((header) => header.name === "Subject")?.value }
+            ],
+            receivedTimes: receivedTimes
+        };
+        const from = extractEmailAddress(data.payload.headers.find((header) => header.name === "From")?.value);
+        const to = extractEmailAddress(data.payload.headers.find((header) => header.name === "To")?.value);
+        const oppositeEmail = from !== email ? from : "no-match-email";
+        res.json({ ...extractedData, oppositeEmail });
     }
     catch (error) {
-        console.log(error);
-        res.send(error);
+        console.error("Error reading email:", error);
+        res.status(500).send("Error reading email");
     }
 }
 exports.readMail = readMail;
+function extractEmailAddress(fullAddress) {
+    if (!fullAddress)
+        return '';
+    const match = fullAddress.match(/<([^>]*)>/);
+    return match ? match[1] : '';
+}
