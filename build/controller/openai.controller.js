@@ -12,6 +12,7 @@ const openai = new openai_1.default({
 async function getResponse(req, res) {
     try {
         const userPrompt = req.body.userPrompt;
+        console.log(userPrompt);
         const response = await openai.chat.completions.create({
             model: 'gpt-3.5-turbo',
             messages: [{ role: 'user', content: userPrompt }],

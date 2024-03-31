@@ -11,21 +11,9 @@ require("./utils/googleAuth");
 const config_1 = __importDefault(require("./config/config"));
 const openai_route_1 = __importDefault(require("./route/openai.route"));
 const app = (0, express_1.default)();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT;
 app.set("view engine", "ejs");
 app.use(express_1.default.json());
-// const openai = new OpenAI({
-//   apiKey: process.env.OPENAI_API_KEY,
-// });
-// // app.get("/getResponse", async (req: Request, res: Response) => {
-// //   const userPrompt = req.body.userPrompt;
-// //   const response = await openai.chat.completions.create({
-// //     model: "gpt-3.5-turbo",
-// //     messages: [{ role: "user", content: userPrompt }],
-// //     max_tokens: 100,
-// //   });
-// //   res.send(response.choices[0].message.content);
-// // });
 app.use((0, express_session_1.default)({
     secret: "secret",
     resave: false,
@@ -52,7 +40,7 @@ app.get("/auth/failure", (req, res) => {
         console.error("Database connection error:", error);
     }
 })();
-app.use("/api", gmail_route_1.default);
+app.use("/", gmail_route_1.default);
 app.use("/api", openai_route_1.default);
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
