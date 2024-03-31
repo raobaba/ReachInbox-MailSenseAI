@@ -18,17 +18,16 @@ const auth = {
     clientSecret: process.env.CLIENT_SECRET,
     refreshToken: process.env.REFRESH_TOKEN,
 };
-const mailOptionsBase = {
-    to: "shrikishunr7@gmail.com",
-    from: "raorajan9576@gmail.com",
-    subject: "Gmail API using Node JS",
-};
 const oAuth2Client = new googleapis_1.google.auth.OAuth2(process.env.CLIENT_ID, process.env.CLIENT_SECRET, process.env.REDIRECT_URI);
 oAuth2Client.setCredentials({
     refresh_token: process.env.REFRESH_TOKEN,
 });
 async function sendMail(req, res) {
     try {
+        const { to, subject, text } = req.body;
+        if (!to || !subject || !text) {
+            throw new Error("To, subject, or text is missing in the request body");
+        }
         const accessToken = await oAuth2Client.getAccessToken();
         if (!accessToken) {
             throw new Error("Access token is null or undefined");
@@ -46,17 +45,12 @@ async function sendMail(req, res) {
             },
         });
         const mailOptions = {
-            ...mailOptionsBase,
-            text: "This is a test mail using Gmail API",
+            to,
+            from: "raorajan9576@gmail.com",
+            subject,
+            text,
         };
         const result = await transport.sendMail(mailOptions);
-        await user_model_1.default.storeSentEmail({
-            toEmail: mailOptions.to,
-            fromEmail: mailOptions.from,
-            subject: mailOptions.subject,
-            textContent: mailOptions.text,
-            sentAt: new Date(),
-        });
         res.send(result);
     }
     catch (error) {

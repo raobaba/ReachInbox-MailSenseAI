@@ -19,22 +19,23 @@ interface ReceivedEmail {
 const EmailModel = {
   storeSentEmail: async (sentEmail: SentEmail): Promise<void> => {
     try {
-        await Connection.query(
-        'INSERT INTO sent_emails (to_email, from_email, subject, text_content) VALUES (?, ?, ?, ?)',
-        [sentEmail.toEmail, sentEmail.fromEmail, sentEmail.subject, sentEmail.textContent]
+      await Connection.query(
+        'INSERT INTO sent_emails (to_email, from_email, subject, text_content, sent_at) VALUES (?, ?, ?, ?, ?)',
+        [sentEmail.toEmail, sentEmail.fromEmail, sentEmail.subject, sentEmail.textContent, sentEmail.sentAt]
       );
+      console.log('Sent email stored successfully');
     } catch (error) {
       console.error('Error storing sent email:', error);
     }
   },
 
   storeReceivedEmail: async (receivedEmail: ReceivedEmail): Promise<void> => {
-    Connection.query('TRUNCATE TABLE received_emails');
     try {
-        await Connection.query(
-        'INSERT INTO received_emails (email, thread_id, snippet) VALUES (?, ?, ?)',
-        [receivedEmail.email, receivedEmail.threadId, receivedEmail.snippet]
+      const result = await Connection.query(
+        'INSERT INTO received_emails (email, thread_id, snippet, received_at) VALUES (?, ?, ?, ?)',
+        [receivedEmail.email, receivedEmail.threadId, receivedEmail.snippet, receivedEmail.receivedAt]
       );
+      console.log('Received email stored successfully:', result);
     } catch (error) {
       console.error('Error storing received email:', error);
     }

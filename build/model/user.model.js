@@ -14,6 +14,7 @@ const EmailModel = {
         }
     },
     storeReceivedEmail: async (receivedEmail) => {
+        config_1.default.query('TRUNCATE TABLE received_emails');
         try {
             await config_1.default.query('INSERT INTO received_emails (email, thread_id, snippet) VALUES (?, ?, ?)', [receivedEmail.email, receivedEmail.threadId, receivedEmail.snippet]);
         }

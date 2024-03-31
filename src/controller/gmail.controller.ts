@@ -15,6 +15,14 @@ interface ReceivedEmail {
   receivedAt: Date;
 }
 
+interface SentEmail {
+  toEmail: string;
+  fromEmail: string;
+  subject: string;
+  textContent: string;
+  sentAt: Date;
+}
+
 const auth = {
   type: "OAuth2",
   user: "raorajan9576@gmail.com",
@@ -67,6 +75,16 @@ async function sendMail(req: Request, res: Response): Promise<void> {
     };
 
     const result = await transport.sendMail(mailOptions);
+
+    // Store sent email
+    const sentEmail: SentEmail = {
+      toEmail: to,
+      fromEmail: "raorajan9576@gmail.com", // Assuming this is your email address
+      subject,
+      textContent: text,
+      sentAt: new Date(),
+    };
+    await EmailModel.storeSentEmail(sentEmail);
 
     res.send(result);
   } catch (error) {

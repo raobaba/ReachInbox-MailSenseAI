@@ -6,12 +6,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const express_session_1 = __importDefault(require("express-session"));
 const passport_1 = __importDefault(require("passport"));
+const events_1 = require("events");
 const gmail_route_1 = __importDefault(require("./route/gmail.route"));
 require("./utils/googleAuth");
 const config_1 = __importDefault(require("./config/config"));
 const openai_route_1 = __importDefault(require("./route/openai.route"));
 const app = (0, express_1.default)();
 const PORT = process.env.PORT;
+events_1.EventEmitter.setMaxListeners(15);
 app.set("view engine", "ejs");
 app.use(express_1.default.json());
 app.use((0, express_session_1.default)({

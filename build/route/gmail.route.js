@@ -7,7 +7,7 @@ const express_1 = __importDefault(require("express"));
 const gmail_controller_1 = require("../controller/gmail.controller");
 const passport_1 = __importDefault(require("passport"));
 const gmailRouter = express_1.default.Router();
-gmailRouter.get("/mail/send", (req, res) => (0, gmail_controller_1.sendMail)(req, res));
+gmailRouter.post("/mail/send", (req, res) => (0, gmail_controller_1.sendMail)(req, res));
 gmailRouter.get("/mail/list/:email", (req, res) => (0, gmail_controller_1.getMails)(req, res));
 gmailRouter.get("/mail/read/:email/:messageId", (req, res) => (0, gmail_controller_1.readMail)(req, res));
 gmailRouter.get("/auth/google", passport_1.default.authenticate("google", { scope: ["email", "profile"] }));
