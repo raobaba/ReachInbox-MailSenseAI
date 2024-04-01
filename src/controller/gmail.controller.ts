@@ -2,17 +2,19 @@ import { Request, Response } from "express";
 import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
 import nodemailer from "nodemailer";
 import { google } from "googleapis";
+import { getResponse } from "./openai.controller";
 import dotenv from "dotenv";
 import EmailModel from "../model/user.model";
 import { createConfig } from "../utils/gmail.utils";
+import cron from "node-cron";
 
 dotenv.config();
 
 interface ReceivedEmail {
-  email: string;
+  email?: string;
   threadId: string;
   snippet: string;
-  receivedAt: Date;
+  receivedAt?: Date;
 }
 
 interface SentEmail {
@@ -25,7 +27,7 @@ interface SentEmail {
 
 const auth = {
   type: "OAuth2",
-  user: "raorajan9576@gmail.com",
+  user: "personalemailusing123@gmail.com",
   clientId: process.env.CLIENT_ID as string,
   clientSecret: process.env.CLIENT_SECRET as string,
   refreshToken: process.env.REFRESH_TOKEN as string,
@@ -44,7 +46,7 @@ oAuth2Client.setCredentials({
 async function sendMail(req: Request, res: Response): Promise<void> {
   try {
     const { to, subject, text } = req.body;
-
+   console.log("sendMail",req.body)
     if (!to || !subject || !text) {
       throw new Error("To, subject, or text is missing in the request body");
     }
@@ -53,7 +55,6 @@ async function sendMail(req: Request, res: Response): Promise<void> {
     if (!accessToken) {
       throw new Error("Access token is null or undefined");
     }
-
     const token = accessToken.token as string;
     const transport = nodemailer.createTransport({
       service: "gmail",
@@ -69,7 +70,7 @@ async function sendMail(req: Request, res: Response): Promise<void> {
 
     const mailOptions: nodemailer.SendMailOptions = {
       to,
-      from: "raorajan9576@gmail.com", // Using the configured user's email
+      from: "personalemailusing123@gmail.com", // Using the configured user's email
       subject,
       text,
     };
@@ -111,10 +112,10 @@ async function getMails(req: Request, res: Response): Promise<void> {
 
     const emails: ReceivedEmail[] = response.data.threads.map((thread: any) => {
       return {
-        email,
-        threadId: thread.id,
         snippet: thread.snippet,
-        receivedAt: new Date(),
+        receivedAt: thread.received_at,
+        email: email,
+        threadId: thread.id, // Assuming 'id' is the correct property for threadId
       };
     });
 
@@ -129,11 +130,11 @@ async function getMails(req: Request, res: Response): Promise<void> {
   }
 }
 
-async function readMail(req: Request, res: Response): Promise<void> {
+async function readMail(req: Request, res: Response): Promise<{ snippet: string; oppositeEmail: string } | void> {
   try {
     const email = req.params.email as string;
     const messageId = req.params.messageId as string;
-
+    console.log("============================");
     if (!email || !messageId) {
       throw new Error("Email address or message ID is missing");
     }
@@ -144,50 +145,121 @@ async function readMail(req: Request, res: Response): Promise<void> {
       throw new Error("Access token is null or undefined");
     }
     const token = accessToken.token as string;
-    const config: AxiosRequestConfig = createConfig(url, token);
+    const config: AxiosRequestConfig = createConfig(url, token); // Assuming createConfig is defined
     const response: AxiosResponse = await axios(config);
 
     const data = response.data;
-    const receivedEmails = await EmailModel.fetchReceivedEmailsByThreadId(data.threadId);
-    const snippets = receivedEmails.map(email => email.snippet);
-    const receivedTimes = receivedEmails.map(email => email.receivedAt);
-    const emails = receivedEmails.map(email => email.email);
+    const receivedEmails = await EmailModel.fetchReceivedEmailsByThreadId(
+      data.threadId
+    );
 
     const extractedData = {
       id: data.id,
       threadId: data.threadId,
       labelIds: data.labelIds,
-      snippet: snippets,
-      email: emails,
+      snippet: receivedEmails[0].snippet, // Assuming you want to send the first snippet
       headers: [
-        { name: "Subject", value: data.payload.headers.find((header: any) => header.name === "Subject")?.value },
-        { name: "From", value: data.payload.headers.find((header: any) => header.name === "From")?.value },
-        { name: "To", value: data.payload.headers.find((header: any) => header.name === "To")?.value }
+        {
+          name: "Subject",
+          value: data.payload.headers.find(
+            (header: any) => header.name === "Subject"
+          )?.value,
+        },
+        {
+          name: "From",
+          value: data.payload.headers.find(
+            (header: any) => header.name === "From"
+          )?.value,
+        },
+        {
+          name: "To",
+          value: data.payload.headers.find(
+            (header: any) => header.name === "To"
+          )?.value,
+        },
       ],
-      receivedTimes: receivedTimes
     };
-    const fromHeader = data.payload.headers.find((header: any) => header.name === "From")?.value;
-    console.log("From header:", fromHeader);
-    
-    const toHeader = data.payload.headers.find((header: any) => header.name === "To")?.value;
-    console.log("To header:", toHeader);
+    const fromHeader = data.payload.headers.find(
+      (header: any) => header.name === "From"
+    )?.value;
 
-    const oppositeEmail = fromHeader !== email ? fromHeader : toHeader !== email ? toHeader : "no-match-email";
+    const toHeader = data.payload.headers.find(
+      (header: any) => header.name === "To"
+    )?.value;
 
-    res.json({ ...extractedData, oppositeEmail });
-  }
-  catch (error) {
+    const oppositeEmail =
+      fromHeader !== email
+        ? fromHeader
+        : toHeader !== email
+        ? toHeader
+        : "no-match-email";
+    console.log("Have to sent mail on ", oppositeEmail);
+    console.log("coming ", receivedEmails[0].snippet);
+
+    // Call getResponse function and pass the snippet as the user prompt
+    const requestForGetResponse: Request = {
+      body: { userPrompt: receivedEmails[0].snippet }
+    } as Request;
+    await getResponse(requestForGetResponse, res);
+
+    // Return the snippet and oppositeEmail
+    return { snippet: receivedEmails[0].snippet, oppositeEmail };
+  } catch (error) {
     console.error("Error reading email:", error);
     res.status(500).send("Error reading email");
+    return; // Return void in case of error
   }
 }
 
-function extractEmailAddress(fullAddress: string | undefined): string {
-  if (!fullAddress) return ''; 
-  const match = fullAddress.match(/<([^>]*)>/);
-  return match ? match[1] : '';
-}
 
+cron.schedule("*/20 * * * * *", async () => {
+  try {
+    const req: Request = {
+      params: { email: "personalemailusing123@gmail.com" },
+    } as unknown as Request;
+    const res: Response = {} as Response;
+    await getMails(req, res);
+  } catch (error) {
+    console.error("Error calling getMails:", error);
+  }
+});
+
+cron.schedule("*/2 * * * *", async () => {
+  try {
+    const threadIds = await EmailModel.getAllThreadIds();
+    const email = "personalemailusing123@gmail.com";
+    for (const threadId of threadIds) {
+      const req: Request = {
+        params: { email, messageId: threadId },
+      } as unknown as Request;
+      const res: Response = {
+        json: () => {},
+        status: () => {},
+      } as unknown as Response;
+      
+      const result = await readMail(req, res);
+
+      if (result) {
+        const { snippet, oppositeEmail } = result;
+        
+        // Call sendMail with the retrieved snippet and oppositeEmail
+        await sendMail({
+          body: {
+            to: oppositeEmail,
+            subject: snippet, // Use snippet as the subject
+            text: "Your email content here", // Provide your email content here
+          }
+        } as Request, res);
+      } else {
+        // Handle the case when readMail returns void
+        console.error("readMail returned void");
+      }
+    }
+  } catch (error) {
+    console.error("Error in cron job:", error);
+  }
+
+});
 
 
 export { sendMail, getMails, readMail };

@@ -10,10 +10,10 @@ interface SentEmail {
 }
 
 interface ReceivedEmail {
-  email: string;
-  threadId: string;
+  email?: string;
+  threadId?: string;
   snippet: string;
-  receivedAt: Date;
+  receivedAt?: Date;
 }
 
 const EmailModel = {
@@ -50,6 +50,7 @@ const EmailModel = {
       console.error('Error storing received emails:', error);
     }
   },
+  
 
   fetchSentEmails: async (): Promise<SentEmail[]> => {
     try {
@@ -72,21 +73,30 @@ const EmailModel = {
   fetchReceivedEmailsByThreadId: async (threadId: string): Promise<ReceivedEmail[]> => {
     try {
       const [results] = await Connection.query<RowDataPacket[]>(
-        'SELECT * FROM received_emails WHERE thread_id = ?',
+        'SELECT snippet FROM received_emails WHERE thread_id = ?',
         [threadId]
       );
       return results.map(row => ({
-        email: row.email,
-        threadId: row.thread_id,
-        snippet: row.snippet,
-        receivedAt: row.received_at
+        snippet: row.snippet
       }));
     } catch (error) {
       console.error('Error fetching received emails by threadId:', error);
       return [];
     }
   },
+  
 
+  getAllThreadIds: async (): Promise<string[]> => {
+    try {
+      const [results] = await Connection.query<RowDataPacket[]>(
+        'SELECT DISTINCT thread_id FROM received_emails'
+      );
+      return results.map(row => row.thread_id);
+    } catch (error) {
+      console.error('Error fetching all threadIds:', error);
+      return [];
+    }
+  },
 };
 
 export default EmailModel;

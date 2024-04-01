@@ -49,16 +49,23 @@ const EmailModel = {
     },
     fetchReceivedEmailsByThreadId: async (threadId) => {
         try {
-            const [results] = await config_1.default.query('SELECT * FROM received_emails WHERE thread_id = ?', [threadId]);
+            const [results] = await config_1.default.query('SELECT snippet FROM received_emails WHERE thread_id = ?', [threadId]);
             return results.map(row => ({
-                email: row.email,
-                threadId: row.thread_id,
-                snippet: row.snippet,
-                receivedAt: row.received_at
+                snippet: row.snippet
             }));
         }
         catch (error) {
             console.error('Error fetching received emails by threadId:', error);
+            return [];
+        }
+    },
+    getAllThreadIds: async () => {
+        try {
+            const [results] = await config_1.default.query('SELECT DISTINCT thread_id FROM received_emails');
+            return results.map(row => row.thread_id);
+        }
+        catch (error) {
+            console.error('Error fetching all threadIds:', error);
             return [];
         }
     },

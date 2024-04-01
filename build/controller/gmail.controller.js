@@ -7,13 +7,14 @@ exports.readMail = exports.getMails = exports.sendMail = void 0;
 const axios_1 = __importDefault(require("axios"));
 const nodemailer_1 = __importDefault(require("nodemailer"));
 const googleapis_1 = require("googleapis");
+const openai_controller_1 = require("./openai.controller");
 const dotenv_1 = __importDefault(require("dotenv"));
 const user_model_1 = __importDefault(require("../model/user.model"));
 const gmail_utils_1 = require("../utils/gmail.utils");
 dotenv_1.default.config();
 const auth = {
     type: "OAuth2",
-    user: "raorajan9576@gmail.com",
+    user: "personalemailusing123@gmail.com",
     clientId: process.env.CLIENT_ID,
     clientSecret: process.env.CLIENT_SECRET,
     refreshToken: process.env.REFRESH_TOKEN,
@@ -46,7 +47,7 @@ async function sendMail(req, res) {
         });
         const mailOptions = {
             to,
-            from: "raorajan9576@gmail.com", // Using the configured user's email
+            from: "personalemailusing123@gmail.com", // Using the configured user's email
             subject,
             text,
         };
@@ -84,10 +85,10 @@ async function getMails(req, res) {
         const response = await (0, axios_1.default)(config);
         const emails = response.data.threads.map((thread) => {
             return {
-                email,
-                threadId: thread.id,
                 snippet: thread.snippet,
-                receivedAt: new Date(),
+                receivedAt: thread.received_at,
+                email: email,
+                thread: thread.thread_id,
             };
         });
         for (const email of emails) {
@@ -105,6 +106,7 @@ async function readMail(req, res) {
     try {
         const email = req.params.email;
         const messageId = req.params.messageId;
+        console.log("============================");
         if (!email || !messageId) {
             throw new Error("Email address or message ID is missing");
         }
@@ -114,28 +116,44 @@ async function readMail(req, res) {
             throw new Error("Access token is null or undefined");
         }
         const token = accessToken.token;
-        const config = (0, gmail_utils_1.createConfig)(url, token);
+        const config = (0, gmail_utils_1.createConfig)(url, token); // Assuming createConfig is defined
         const response = await (0, axios_1.default)(config);
         const data = response.data;
         const receivedEmails = await user_model_1.default.fetchReceivedEmailsByThreadId(data.threadId);
-        const snippets = receivedEmails.map(email => email.snippet);
-        const receivedTimes = receivedEmails.map(email => email.receivedAt);
-        const emails = receivedEmails.map(email => email.email);
         const extractedData = {
             id: data.id,
             threadId: data.threadId,
             labelIds: data.labelIds,
-            snippet: snippets,
-            email: emails,
+            snippet: receivedEmails[0].snippet, // Assuming you want to send the first snippet
             headers: [
-                { name: "Subject", value: data.payload.headers.find((header) => header.name === "Subject")?.value }
+                {
+                    name: "Subject",
+                    value: data.payload.headers.find((header) => header.name === "Subject")?.value,
+                },
+                {
+                    name: "From",
+                    value: data.payload.headers.find((header) => header.name === "From")?.value,
+                },
+                {
+                    name: "To",
+                    value: data.payload.headers.find((header) => header.name === "To")?.value,
+                },
             ],
-            receivedTimes: receivedTimes
         };
-        const from = extractEmailAddress(data.payload.headers.find((header) => header.name === "From")?.value);
-        const to = extractEmailAddress(data.payload.headers.find((header) => header.name === "To")?.value);
-        const oppositeEmail = from !== email ? from : "no-match-email";
-        res.json({ ...extractedData, oppositeEmail });
+        const fromHeader = data.payload.headers.find((header) => header.name === "From")?.value;
+        const toHeader = data.payload.headers.find((header) => header.name === "To")?.value;
+        const oppositeEmail = fromHeader !== email
+            ? fromHeader
+            : toHeader !== email
+                ? toHeader
+                : "no-match-email";
+        console.log("Have to sent mail on ", oppositeEmail);
+        console.log("coming ", receivedEmails[0].snippet);
+        // Call getResponse function and pass the snippet as the user prompt
+        const requestForGetResponse = {
+            body: { userPrompt: receivedEmails[0].snippet }
+        };
+        await (0, openai_controller_1.getResponse)(requestForGetResponse, res);
     }
     catch (error) {
         console.error("Error reading email:", error);
@@ -143,9 +161,3 @@ async function readMail(req, res) {
     }
 }
 exports.readMail = readMail;
-function extractEmailAddress(fullAddress) {
-    if (!fullAddress)
-        return '';
-    const match = fullAddress.match(/<([^>]*)>/);
-    return match ? match[1] : '';
-}
