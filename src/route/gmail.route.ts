@@ -13,7 +13,7 @@ gmailRouter.get("/mail/list/:email", (req: Request, res: Response) =>
 );
 
 gmailRouter.get("/mail/read/:email/:messageId", (req: Request, res: Response) =>
-  readMail(req, res)
+  readMail(req.params.email, req.params.messageId, res)
 );
 
 gmailRouter.get(

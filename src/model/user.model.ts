@@ -76,8 +76,10 @@ const EmailModel = {
         'SELECT snippet FROM received_emails WHERE thread_id = ?',
         [threadId]
       );
+  
       return results.map(row => ({
         snippet: row.snippet
+        
       }));
     } catch (error) {
       console.error('Error fetching received emails by threadId:', error);
