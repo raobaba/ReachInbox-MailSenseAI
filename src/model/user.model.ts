@@ -55,7 +55,6 @@ const EmailModel = {
       console.error('Error storing received emails:', error);
     }
   },
-  
 
   fetchSentEmails: async (): Promise<SentEmail[]> => {
     try {
@@ -125,6 +124,7 @@ const EmailModel = {
       if (results.length > 0) {
         return results[0].is_email_sent === 1; 
       }
+      
       return false;
     } catch (error) {
       console.error('Error checking if email is sent:', error);

@@ -43,6 +43,7 @@ oAuth2Client.setCredentials({
   refresh_token: process.env.REFRESH_TOKEN as string,
 });
 
+
 async function sendMail(req: Request, res: Response): Promise<void> {
   try {
     const { to, from, subject, text, threadId } = req.body;
@@ -50,15 +51,6 @@ async function sendMail(req: Request, res: Response): Promise<void> {
     if (!to || !subject || !text) {
       throw new Error("To, subject, or text is missing in the request body");
     }
-
-    // Check if email has already been sent
-    const isEmailSent = await EmailModel.checkIfEmailSent(threadId);
-    if (isEmailSent) {
-      console.log("Email has already been sent to", threadId);
-      res.status(400).send("Email has already been sent to this recipient");
-      return;
-    }
-
     // Send the email
     const accessToken = await oAuth2Client.getAccessToken();
     if (!accessToken) {
@@ -86,7 +78,7 @@ async function sendMail(req: Request, res: Response): Promise<void> {
 
     const result = await transport.sendMail(mailOptions);
 
-    // Store sent email
+  
     const sentEmail: SentEmail = {
       toEmail: to,
       fromEmail: auth.user,
@@ -118,16 +110,10 @@ async function getMails(req: Request, res: Response): Promise<void> {
     if (!accessToken) {
       throw new Error("Access token is null or undefined");
     }
+
     const token = accessToken.token as string;
     const config: AxiosRequestConfig = createConfig(url, token);
     const response: AxiosResponse = await axios(config);
-
-    // Check if no threads are returned
-    if (!response.data.threads || response.data.threads.length === 0) {
-      console.log("No emails found.");
-      res.status(404).send("No emails found.");
-      return;
-    }
 
     const emails: ReceivedEmail[] = response.data.threads.map((thread: any) => {
       return {
@@ -137,34 +123,17 @@ async function getMails(req: Request, res: Response): Promise<void> {
         threadId: thread.id,
       };
     });
-
-    const filteredEmails = await Promise.all(
-      emails.map(async (email) => {
-        const isEmailSent = await EmailModel.checkIfEmailSent(email.threadId);
-        return isEmailSent ? null : email;
-      })
-    );
-
-    const validEmails = filteredEmails.filter(
-      (email) => email !== null
-    ) as ReceivedEmail[];
-
-    if (validEmails.length === 0) {
-      console.log("No new emails to store.");
-      res.status(200).send("No new emails to store.");
-      return;
-    }
-
-    for (const email of validEmails) {
-      await EmailModel.storeReceivedEmail([email]);
+    
+    for (const email of emails) {
+      await EmailModel.storeReceivedEmail(emails); 
     }
     console.log(
       "getMails==============================================",
-      validEmails
+      emails
     );
-    res.json(validEmails);
+    res.json(emails);
   } catch (error) {
-    console.error("Error fetching emails:");
+    console.error("Error fetching emails:", error);
     res.status(500).send("Error fetching emails");
   }
 }
@@ -188,6 +157,7 @@ async function readMail(
     const response: AxiosResponse = await axios(config);
 
     const data = response.data;
+    console.log(data.threadId)
     const receivedEmails = await EmailModel.fetchReceivedEmailsByThreadId(
       data.threadId
     );
@@ -215,15 +185,6 @@ async function readMail(
           : toHeader
         : "no-match-email";
 
-    const extractedData = {
-      id: data.id,
-      threadId: data.threadId,
-      labelIds: data.labelIds,
-      subject: subjectHeaderValue,
-      snippet: receivedEmails[0].snippet,
-      senderEmail: oppositeEmail,
-    };
-
     const requestForGetResponse: Request = {
       body: {
         userPrompt: receivedEmails[0].snippet,
@@ -234,20 +195,17 @@ async function readMail(
       },
     } as Request;
     console.log("ReqquestForGetResponse", requestForGetResponse);
-
-    if (receivedEmails.length > 0) {
-      await getResponse(requestForGetResponse, res);
-    } else {
-      console.log("No data found in database for the threadId:", data.threadId);
-      res.status(404).send("No data found in database for the threadId");
-    }
+     await getResponse(requestForGetResponse, res);
+    
   } catch (error) {
     console.error("Error reading email:");
     res.status(500).send("Error reading email");
   }
 }
 
-cron.schedule("*/5 * * * * *", async () => {
+
+
+cron.schedule("*/20 * * * * *", async () => {
   try {
     console.log("calling GETMAIL==============================");
     const req: Request = {
@@ -260,7 +218,8 @@ cron.schedule("*/5 * * * * *", async () => {
   }
 });
 
-cron.schedule("*/10 * * * * *", async () => {
+
+cron.schedule("*/30 * * * * *", async () => {
   try {
     console.log("calling readMail=================================");
     const threadIds = await EmailModel.getAllThreadIds();
@@ -275,7 +234,7 @@ cron.schedule("*/10 * * * * *", async () => {
       requestParams.messageId,
       {} as Response
     );
-    console.log("readmail", requestParams);
+    console.log("ReadMails==========================================================================",requestParams);
   } catch (error) {
     console.error("Error calling readMail:");
   }
