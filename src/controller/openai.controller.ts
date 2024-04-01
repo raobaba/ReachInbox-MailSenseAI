@@ -13,6 +13,7 @@ export async function getResponse(req: Request, res: Response): Promise<void> {
     const senderMail: string = req.body.senderMail; // Assuming senderMail is sent in the request body
     const fromMail:string = req.body.user;
     const subject:string = req.body.subject;
+    const threadId = req.body.threadId;
   
     const response = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
@@ -29,10 +30,13 @@ export async function getResponse(req: Request, res: Response): Promise<void> {
       const content: string = response.choices[0].message.content;
       await OpenAIModel.sendResponse(userPrompt, content);
       const openaiResponse: Request = {
-        body: { to: senderMail,from:fromMail, subject: subject, text: content }
+        body: { to: senderMail,from:fromMail, subject: subject, text: content, threadId:threadId }
       } as Request;
-      await sendMail(openaiResponse, res);
+
       console.log("getResponse==================================",openaiResponse)
+
+      await sendMail(openaiResponse, res);
+
       res.send(content);
     } else {
       throw new Error("No response content received from OpenAI");

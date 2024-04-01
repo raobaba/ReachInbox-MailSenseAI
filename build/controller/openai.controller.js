@@ -16,6 +16,7 @@ async function getResponse(req, res) {
         const senderMail = req.body.senderMail; // Assuming senderMail is sent in the request body
         const fromMail = req.body.user;
         const subject = req.body.subject;
+        const threadId = req.body.threadId;
         const response = await openai.chat.completions.create({
             model: "gpt-3.5-turbo",
             messages: [
@@ -30,10 +31,10 @@ async function getResponse(req, res) {
             const content = response.choices[0].message.content;
             await openai_model_1.default.sendResponse(userPrompt, content);
             const openaiResponse = {
-                body: { to: senderMail, from: fromMail, subject: subject, text: content }
+                body: { to: senderMail, from: fromMail, subject: subject, text: content, threadId: threadId }
             };
-            await (0, gmail_controller_1.sendMail)(openaiResponse, res);
             console.log("getResponse==================================", openaiResponse);
+            await (0, gmail_controller_1.sendMail)(openaiResponse, res);
             res.send(content);
         }
         else {
