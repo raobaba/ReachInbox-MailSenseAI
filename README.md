@@ -37,7 +37,7 @@ ReachInbox/
 - **Email Parsing and Categorization:** The tool intelligently parses incoming emails from Google and Outlook, categorizing them into predefined categories for efficient management.
 - **Context-Based Replies:** Utilizing OpenAI's natural language processing capabilities, the tool suggests context-based replies tailored to the content of the received emails.
 - **Scalable Architecture:** Built with CronJob for message queueing, ensuring scalability and reliability in processing a large volume of emails.
-
+```bash
 ## Installation & Getting Started
 1. **Clone the Repository:**
    - Copy the repository's URL from GitHub.
@@ -55,7 +55,7 @@ ReachInbox/
 
 5. **Run the Application:**
    - Execute: `npm start` to run the application.
-
+```
 ## Credentials
 Securely configure user credentials for authenticated pages.
 
