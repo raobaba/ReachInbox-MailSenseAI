@@ -10,21 +10,21 @@ The tool parses emails from Google and Outlook, categorizes them into "Intereste
 
 
 ## Directory Structure
-.
-ReachInbox
-├── node_modules
-├── src
-   ├── config
-   ├── controller
-   ├── model
-   ├── route
-   ├── utils
-   └── index.ts
-├── .env
-├── .gitignore
-├── package.json
-├── package-lock.json
-└── tsconfig.json
+- ReachInbox
+  - node_modules
+  - src
+    - config
+    - controller
+    - model
+    - route
+    - utils
+    - index.ts
+  - .env
+  - .gitignore
+  - package.json
+  - package-lock.json
+  - tsconfig.json
+
 
 
 
