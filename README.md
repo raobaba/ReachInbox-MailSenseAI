@@ -12,7 +12,7 @@ N/A
 ## Directory Structure
 
 # Directory Structure
-
+```bash
 ReachInbox/
 |-- node_modules/
 |-- src/
@@ -27,7 +27,7 @@ ReachInbox/
 |-- package.json
 |-- package-lock.json
 `-- tsconfig.json
-
+```
 
 ## Video Walkthrough
 [Watch the video walkthrough here](https://www.loom.com/share/3418f4004b204913a88381fae0abea1f?sid=a348b45b-5d5e-49e6-bdd2-fd8627be7387)
