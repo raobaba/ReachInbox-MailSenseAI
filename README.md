@@ -36,7 +36,7 @@ ReachInbox/
 - **Google OAuth Integration:** Users can seamlessly sign up and log in using their Google accounts, enhancing security and convenience.
 - **Email Parsing and Categorization:** The tool intelligently parses incoming emails from Google and Outlook, categorizing them into predefined categories for efficient management.
 - **Context-Based Replies:** Utilizing OpenAI's natural language processing capabilities, the tool suggests context-based replies tailored to the content of the received emails.
-- **Scalable Architecture:** Built with BullMQ for message queueing, ensuring scalability and reliability in processing a large volume of emails.
+- **Scalable Architecture:** Built with CronJob for message queueing, ensuring scalability and reliability in processing a large volume of emails.
 
 ## Installation & Getting Started
 1. **Clone the Repository:**
